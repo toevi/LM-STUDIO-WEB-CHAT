@@ -1,0 +1,1330 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LM Studio WebChat v2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .version-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .connection-panel {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .model-panel {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+        }
+
+        .history-panel {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff4444;
+            transition: background-color 0.3s ease;
+        }
+
+        .status-dot.connected {
+            background-color: #44ff44;
+            box-shadow: 0 0 10px rgba(68, 255, 68, 0.5);
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .input-group input {
+            width: 120px;
+        }
+
+        .model-select, .conversation-select {
+            min-width: 180px;
+        }
+
+        .model-select option, .conversation-select option {
+            background: #333;
+            color: white;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff4444, #cc3333);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn-warning {
+            background: linear-gradient(45deg, #ffc107, #e0a800);
+            color: #333;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .model-status {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .model-status.loaded {
+            background: rgba(68, 255, 68, 0.2);
+            color: #44ff44;
+            border: 1px solid rgba(68, 255, 68, 0.3);
+        }
+
+        .model-status.unloaded {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+            border: 1px solid rgba(255, 68, 68, 0.3);
+        }
+
+        .model-status.loading {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.95);
+            margin: 1rem;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .chat-header {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .conversation-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #F5F5DC;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background: linear-gradient(135deg, #e3f2fd, #f0f4ff);
+            color: #1a1a1a;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e0e7ff;
+        }
+
+        .message.system {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+            margin: 0 auto;
+            text-align: center;
+            font-style: italic;
+            max-width: 60%;
+        }
+
+        .message-content {
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .message-timestamp {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        .message-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: none;
+            gap: 0.25rem;
+        }
+
+        .message:hover .message-actions {
+            display: flex;
+        }
+
+        .action-btn {
+            background: rgba(0,0,0,0.15);
+            border: none;
+            border-radius: 4px;
+            color: #333;
+            cursor: pointer;
+            padding: 0.25rem;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            background: rgba(0,0,0,0.25);
+            transform: scale(1.1);
+        }
+
+        .input-area {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .message-input {
+            flex: 1;
+            resize: none;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            background: white;
+            transition: all 0.2s ease;
+            max-height: 120px;
+            min-height: 50px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stop-chat-btn {
+            background: linear-gradient(45deg, #ff4444, #cc3333);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .stop-chat-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+        }
+
+        .stop-chat-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 0.2rem;
+        }
+
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .error-message {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .connection-panel, .model-panel, .history-panel {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .input-group input, .input-group select {
+                width: 150px;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">
+            🤖 LM Studio WebChat 
+            <span class="version-badge">v2.0</span>
+        </div>
+        <div class="connection-panel">
+            <div class="connection-status">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Rozłączony</span>
+            </div>
+            
+            <div class="input-group">
+                <label>IP:</label>
+                <input type="text" id="serverIp" value="127.0.0.1" placeholder="127.0.0.1">
+            </div>
+            
+            <div class="input-group">
+                <label>Port:</label>
+                <input type="text" id="serverPort" value="1234" placeholder="1234">
+            </div>
+            
+            <button class="btn btn-primary" id="testConnectionBtn">Test</button>
+        </div>
+        
+        <div class="model-panel" id="modelPanel" style="display: none;">
+            <div class="input-group">
+                <label>Model:</label>
+                <select class="model-select" id="modelSelect">
+                    <option value="">Wybierz model...</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" id="loadModelBtn" disabled>Załaduj</button>
+            <button class="btn btn-secondary" id="unloadModelBtn" disabled>Wyładuj</button>
+            <button class="btn btn-secondary" id="refreshModelsBtn">Odśwież</button>
+            
+            <div class="connection-status">
+                <span>Status:</span>
+                <div class="model-status unloaded" id="modelStatus">Brak modelu</div>
+            </div>
+        </div>
+
+        <div class="history-panel" id="historyPanel" style="display: none;">
+            <div class="input-group">
+                <label>Konwersacja:</label>
+                <select class="conversation-select" id="conversationSelect">
+                    <option value="new">Nowa konwersacja</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" id="newConversationBtn">Nowa</button>
+            <button class="btn btn-secondary" id="loadHistoryBtn">Załaduj historię</button>
+            <button class="btn btn-warning" id="clearCurrentBtn">Wyczyść obecną</button>
+            <button class="btn btn-danger" id="deleteConversationBtn" disabled>Usuń konwersację</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="conversation-info">
+                <span id="conversationTitle">Konwersacja: Nowa</span>
+                <span id="messageCount">Wiadomości: 0</span>
+                <span id="contextInfo">Kontekst: Pusty</span>
+            </div>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message system">
+                <div class="message-content">Witaj w LM Studio WebChat v2! Skonfiguruj połączenie z serwerem i wybierz model. Nowa wersja automatycznie zarządza historią konwersacji.</div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <textarea 
+                class="message-input" 
+                id="messageInput" 
+                placeholder="Wpisz swoją wiadomość tutaj..."
+                rows="1"></textarea>
+            <button class="send-btn" id="sendBtn" title="Wyślij wiadomość">
+                ➤
+            </button>
+            <button class="stop-chat-btn" id="stopChatBtn" title="Stop Chat">
+                ⏹
+            </button>
+        </div>
+    </div>
+
+    <script>
+        class LMStudioChatV2 {
+            constructor() {
+                this.initializeElements();
+                this.initializeState();
+                this.initializeEventListeners();
+                this.loadSettings();
+            }
+
+            initializeElements() {
+                // Connection elements
+                this.serverIp = document.getElementById('serverIp');
+                this.serverPort = document.getElementById('serverPort');
+                this.testConnectionBtn = document.getElementById('testConnectionBtn');
+                this.statusDot = document.getElementById('statusDot');
+                this.statusText = document.getElementById('statusText');
+
+                // Model elements
+                this.modelPanel = document.getElementById('modelPanel');
+                this.modelSelect = document.getElementById('modelSelect');
+                this.loadModelBtn = document.getElementById('loadModelBtn');
+                this.unloadModelBtn = document.getElementById('unloadModelBtn');
+                this.refreshModelsBtn = document.getElementById('refreshModelsBtn');
+                this.modelStatus = document.getElementById('modelStatus');
+
+                // History elements
+                this.historyPanel = document.getElementById('historyPanel');
+                this.conversationSelect = document.getElementById('conversationSelect');
+                this.newConversationBtn = document.getElementById('newConversationBtn');
+                this.loadHistoryBtn = document.getElementById('loadHistoryBtn');
+                this.clearCurrentBtn = document.getElementById('clearCurrentBtn');
+                this.deleteConversationBtn = document.getElementById('deleteConversationBtn');
+
+                // Chat elements
+                this.chatMessages = document.getElementById('chatMessages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.stopChatBtn = document.getElementById('stopChatBtn');
+
+                // Info elements
+                this.conversationTitle = document.getElementById('conversationTitle');
+                this.messageCount = document.getElementById('messageCount');
+                this.contextInfo = document.getElementById('contextInfo');
+            }
+
+            initializeState() {
+                this.isConnected = false;
+                this.isGenerating = false;
+                this.currentController = null;
+                this.availableModels = [];
+                this.currentModel = null;
+                this.currentConversationId = 'new';
+                this.conversationHistory = [];
+                this.conversations = JSON.parse(localStorage.getItem('lmstudio-conversations') || '{}');
+            }
+
+            initializeEventListeners() {
+                // Connection
+                this.testConnectionBtn.addEventListener('click', () => this.testConnection());
+
+                // Model management
+                this.loadModelBtn.addEventListener('click', () => this.loadModel());
+                this.unloadModelBtn.addEventListener('click', () => this.unloadModel());
+                this.refreshModelsBtn.addEventListener('click', () => this.loadAvailableModels());
+                this.modelSelect.addEventListener('change', () => this.onModelSelectChange());
+
+                // History management
+                this.newConversationBtn.addEventListener('click', () => this.createNewConversation());
+                this.loadHistoryBtn.addEventListener('click', () => this.loadConversationHistory());
+                this.clearCurrentBtn.addEventListener('click', () => this.clearCurrentConversation());
+                this.deleteConversationBtn.addEventListener('click', () => this.deleteConversation());
+                this.conversationSelect.addEventListener('change', () => this.onConversationSelectChange());
+
+                // Chat
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.stopChatBtn.addEventListener('click', () => this.stopGeneration());
+                this.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+                this.messageInput.addEventListener('input', () => this.adjustTextareaHeight());
+
+                // Settings
+                this.serverIp.addEventListener('change', () => this.saveSettings());
+                this.serverPort.addEventListener('change', () => this.saveSettings());
+            }
+
+            saveSettings() {
+                const settings = {
+                    serverIp: this.serverIp.value,
+                    serverPort: this.serverPort.value,
+                    selectedModel: this.modelSelect.value,
+                    currentConversation: this.currentConversationId
+                };
+                localStorage.setItem('lmstudio-settings', JSON.stringify(settings));
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('lmstudio-settings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    this.serverIp.value = settings.serverIp || '127.0.0.1';
+                    this.serverPort.value = settings.serverPort || '1234';
+                    this.savedModel = settings.selectedModel;
+                    this.savedConversation = settings.currentConversation || 'new';
+                }
+                this.populateConversationSelect();
+            }
+
+            getServerUrl() {
+                return `http://${this.serverIp.value}:${this.serverPort.value}`;
+            }
+
+            adjustTextareaHeight() {
+                this.messageInput.style.height = 'auto';
+                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+            }
+
+            async testConnection() {
+                this.testConnectionBtn.disabled = true;
+                this.testConnectionBtn.textContent = 'Testowanie...';
+
+                try {
+                    const response = await fetch(`${this.getServerUrl()}/v1/models`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (response.ok) {
+                        this.setConnectionStatus(true);
+                        this.addMessage('system', 'Połączenie z serwerem LM Studio nawiązane pomyślnie!');
+                        
+                        // Show panels and load data
+                        this.modelPanel.style.display = 'flex';
+                        this.historyPanel.style.display = 'flex';
+                        await this.loadAvailableModels();
+                        await this.checkCurrentModel();
+                        this.loadSavedConversation();
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    this.setConnectionStatus(false);
+                    this.modelPanel.style.display = 'none';
+                    this.historyPanel.style.display = 'none';
+                    this.addMessage('system', `Błąd połączenia: ${error.message}`);
+                } finally {
+                    this.testConnectionBtn.disabled = false;
+                    this.testConnectionBtn.textContent = 'Test';
+                }
+            }
+
+            setConnectionStatus(connected) {
+                this.isConnected = connected;
+                this.statusDot.classList.toggle('connected', connected);
+                this.statusText.textContent = connected ? 'Połączony' : 'Rozłączony';
+                
+                if (!connected) {
+                    this.modelPanel.style.display = 'none';
+                    this.historyPanel.style.display = 'none';
+                    this.updateModelStatus('unloaded', 'Brak połączenia');
+                }
+                
+                this.updateSendButtonState();
+            }
+
+            updateSendButtonState() {
+                this.sendBtn.disabled = !this.isConnected || this.isGenerating || !this.currentModel;
+                this.stopChatBtn.disabled = !this.isGenerating;
+            }
+
+            // Model Management
+            async loadAvailableModels() {
+                this.refreshModelsBtn.disabled = true;
+                this.refreshModelsBtn.textContent = 'Ładowanie...';
+
+                try {
+                    const response = await fetch(`${this.getServerUrl()}/v1/models`);
+                    const data = await response.json();
+                    
+                    this.availableModels = data.data || [];
+                    this.populateModelSelect();
+                    
+                    this.addMessage('system', `Znaleziono ${this.availableModels.length} dostępnych modeli.`);
+                } catch (error) {
+                    this.addMessage('system', `Błąd ładowania modeli: ${error.message}`);
+                } finally {
+                    this.refreshModelsBtn.disabled = false;
+                    this.refreshModelsBtn.textContent = 'Odśwież';
+                }
+            }
+
+            populateModelSelect() {
+                this.modelSelect.innerHTML = '<option value="">Wybierz model...</option>';
+                
+                this.availableModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.id;
+                    this.modelSelect.appendChild(option);
+                });
+
+                if (this.savedModel && this.availableModels.find(m => m.id === this.savedModel)) {
+                    this.modelSelect.value = this.savedModel;
+                    this.onModelSelectChange();
+                }
+            }
+
+            onModelSelectChange() {
+                const selectedModel = this.modelSelect.value;
+                this.loadModelBtn.disabled = !selectedModel;
+                this.saveSettings();
+            }
+
+            async checkCurrentModel() {
+                try {
+                    const response = await fetch(`${this.getServerUrl()}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            messages: [{ role: 'user', content: 'test' }],
+                            max_tokens: 1,
+                            stream: false
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.model) {
+                            this.currentModel = data.model;
+                            this.updateModelStatus('loaded', `Załadowany: ${this.currentModel}`);
+                            this.loadModelBtn.disabled = true;
+                            this.unloadModelBtn.disabled = false;
+
+                            if (this.availableModels.find(m => m.id === this.currentModel)) {
+                                this.modelSelect.value = this.currentModel;
+                            }
+                        }
+                    } else {
+                        this.updateModelStatus('unloaded', 'Brak załadowanego modelu');
+                    }
+                } catch (error) {
+                    this.updateModelStatus('unloaded', 'Błąd sprawdzania modelu');
+                }
+                
+                this.updateSendButtonState();
+            }
+
+            async loadModel() {
+                const selectedModel = this.modelSelect.value;
+                if (!selectedModel) return;
+
+                this.loadModelBtn.disabled = true;
+                this.loadModelBtn.textContent = 'Ładowanie...';
+                this.updateModelStatus('loading', 'Ładowanie modelu...');
+
+                try {
+                    const response = await fetch(`${this.getServerUrl()}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: selectedModel,
+                            messages: [{ role: 'user', content: 'test' }],
+                            max_tokens: 1,
+                            stream: false
+                        })
+                    });
+
+                    if (response.ok) {
+                        this.currentModel = selectedModel;
+                        this.updateModelStatus('loaded', `Załadowany: ${selectedModel}`);
+                        this.loadModelBtn.disabled = true;
+                        this.unloadModelBtn.disabled = false;
+                        this.addMessage('system', `Model "${selectedModel}" został załadowany pomyślnie.`);
+                        
+                        // Clear conversation history when changing models
+                        this.createNewConversation();
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    this.updateModelStatus('unloaded', 'Błąd ładowania');
+                    this.addMessage('system', `Błąd ładowania modelu: ${error.message}`);
+                } finally {
+                    this.loadModelBtn.disabled = false;
+                    this.loadModelBtn.textContent = 'Załaduj';
+                    this.updateSendButtonState();
+                }
+            }
+
+            async unloadModel() {
+                this.unloadModelBtn.disabled = true;
+                this.unloadModelBtn.textContent = 'Wyładowywanie...';
+
+                try {
+                    this.currentModel = null;
+                    this.conversationHistory = [];
+                    this.updateModelStatus('unloaded', 'Model wyładowany');
+                    this.loadModelBtn.disabled = false;
+                    this.unloadModelBtn.disabled = true;
+                    this.addMessage('system', 'Model został wyładowany. Historia konwersacji została wyczyszczona.');
+                    this.updateConversationInfo();
+                } finally {
+                    this.unloadModelBtn.disabled = false;
+                    this.unloadModelBtn.textContent = 'Wyładuj';
+                    this.updateSendButtonState();
+                }
+            }
+
+            updateModelStatus(status, text) {
+                this.modelStatus.className = `model-status ${status}`;
+                this.modelStatus.textContent = text;
+            }
+
+            // Conversation Management
+            populateConversationSelect() {
+                this.conversationSelect.innerHTML = '<option value="new">Nowa konwersacja</option>';
+                
+                Object.keys(this.conversations).forEach(id => {
+                    const conversation = this.conversations[id];
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = `${conversation.title} (${conversation.messages.length} msg)`;
+                    this.conversationSelect.appendChild(option);
+                });
+
+                if (this.savedConversation && this.conversations[this.savedConversation]) {
+                    this.conversationSelect.value = this.savedConversation;
+                    this.currentConversationId = this.savedConversation;
+                }
+            }
+
+            onConversationSelectChange() {
+                const selectedId = this.conversationSelect.value;
+                this.deleteConversationBtn.disabled = selectedId === 'new';
+                
+                if (selectedId !== this.currentConversationId) {
+                    this.currentConversationId = selectedId;
+                    this.saveSettings();
+                    
+                    if (selectedId === 'new') {
+                        this.conversationHistory = [];
+                        this.updateConversationInfo();
+                    }
+                }
+            }
+
+            createNewConversation() {
+                const timestamp = new Date().toISOString();
+                const id = `conv_${Date.now()}`;
+                
+                this.conversations[id] = {
+                    id: id,
+                    title: `Konwersacja ${new Date().toLocaleString('pl-PL')}`,
+                    created: timestamp,
+                    model: this.currentModel,
+                    messages: []
+                };
+                
+                this.currentConversationId = id;
+                this.conversationHistory = [];
+                
+                this.saveConversations();
+                this.populateConversationSelect();
+                this.conversationSelect.value = id;
+                this.deleteConversationBtn.disabled = false;
+                
+                this.clearChatDisplay();
+                this.updateConversationInfo();
+                this.addMessage('system', `Rozpoczęto nową konwersację: ${this.conversations[id].title}`);
+            }
+
+            async loadConversationHistory() {
+                if (this.currentConversationId === 'new') {
+                    this.addMessage('system', 'Wybierz konwersację z listy aby załadować jej historię.');
+                    return;
+                }
+
+                const conversation = this.conversations[this.currentConversationId];
+                if (!conversation) {
+                    this.addMessage('system', 'Nie można znaleźć wybranej konwersacji.');
+                    return;
+                }
+
+                this.conversationHistory = [...conversation.messages];
+                this.displayConversationHistory();
+                this.updateConversationInfo();
+                
+                this.addMessage('system', `Załadowano historię konwersacji: ${conversation.messages.length} wiadomości.`);
+            }
+
+            displayConversationHistory() {
+                this.clearChatDisplay();
+                
+                this.conversationHistory.forEach(msg => {
+                    this.addMessage(msg.role, msg.content, true, new Date(msg.timestamp));
+                });
+            }
+
+            clearCurrentConversation() {
+                if (this.currentConversationId !== 'new') {
+                    const conversation = this.conversations[this.currentConversationId];
+                    if (conversation) {
+                        conversation.messages = [];
+                        this.saveConversations();
+                    }
+                }
+                
+                this.conversationHistory = [];
+                this.clearChatDisplay();
+                this.updateConversationInfo();
+                this.addMessage('system', 'Historia obecnej konwersacji została wyczyszczona.');
+                
+                // Update conversation list
+                this.populateConversationSelect();
+                this.conversationSelect.value = this.currentConversationId;
+            }
+
+            deleteConversation() {
+                if (this.currentConversationId === 'new') return;
+
+                const conversation = this.conversations[this.currentConversationId];
+                if (conversation && confirm(`Czy na pewno chcesz usunąć konwersację "${conversation.title}"?`)) {
+                    delete this.conversations[this.currentConversationId];
+                    this.saveConversations();
+                    
+                    this.currentConversationId = 'new';
+                    this.conversationHistory = [];
+                    
+                    this.populateConversationSelect();
+                    this.conversationSelect.value = 'new';
+                    this.deleteConversationBtn.disabled = true;
+                    
+                    this.clearChatDisplay();
+                    this.updateConversationInfo();
+                    this.addMessage('system', 'Konwersacja została usunięta.');
+                }
+            }
+
+            loadSavedConversation() {
+                if (this.savedConversation && this.savedConversation !== 'new' && this.conversations[this.savedConversation]) {
+                    this.currentConversationId = this.savedConversation;
+                    this.conversationSelect.value = this.savedConversation;
+                    this.deleteConversationBtn.disabled = false;
+                    this.loadConversationHistory();
+                }
+            }
+
+            saveConversations() {
+                localStorage.setItem('lmstudio-conversations', JSON.stringify(this.conversations));
+            }
+
+            updateConversationInfo() {
+                const conversation = this.conversations[this.currentConversationId];
+                
+                if (this.currentConversationId === 'new') {
+                    this.conversationTitle.textContent = 'Konwersacja: Nowa';
+                    this.messageCount.textContent = `Wiadomości: ${this.conversationHistory.length}`;
+                } else if (conversation) {
+                    this.conversationTitle.textContent = `Konwersacja: ${conversation.title}`;
+                    this.messageCount.textContent = `Wiadomości: ${conversation.messages.length}`;
+                }
+                
+                this.contextInfo.textContent = this.conversationHistory.length > 0 ? 
+                    `Kontekst: ${this.conversationHistory.length} msg` : 'Kontekst: Pusty';
+            }
+
+            // Chat Functions
+            addMessage(role, content, showActions = false, timestamp = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}`;
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageContent.textContent = content;
+                messageDiv.appendChild(messageContent);
+
+                if (timestamp) {
+                    const timestampDiv = document.createElement('div');
+                    timestampDiv.className = 'message-timestamp';
+                    timestampDiv.textContent = timestamp.toLocaleString('pl-PL');
+                    messageDiv.appendChild(timestampDiv);
+                }
+
+                if (showActions && role === 'assistant') {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'message-actions';
+                    
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'action-btn';
+                    copyBtn.textContent = '📋';
+                    copyBtn.title = 'Kopiuj';
+                    copyBtn.addEventListener('click', () => {
+                        navigator.clipboard.writeText(content);
+                        copyBtn.textContent = '✓';
+                        setTimeout(() => copyBtn.textContent = '📋', 1000);
+                    });
+                    
+                    actionsDiv.appendChild(copyBtn);
+                    messageDiv.appendChild(actionsDiv);
+                }
+                
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
+            }
+
+            addLoadingMessage() {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'message assistant loading';
+                loadingDiv.id = 'loadingMessage';
+                
+                const loadingContent = document.createElement('div');
+                loadingContent.className = 'message-content';
+                loadingContent.innerHTML = `
+                    <span>AI pisze odpowiedź</span>
+                    <div class="loading-dots">
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                        <div class="loading-dot"></div>
+                    </div>
+                `;
+                
+                loadingDiv.appendChild(loadingContent);
+                this.chatMessages.appendChild(loadingDiv);
+                this.scrollToBottom();
+            }
+
+            removeLoadingMessage() {
+                const loadingMessage = document.getElementById('loadingMessage');
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                }
+            }
+
+            clearChatDisplay() {
+                this.chatMessages.innerHTML = '';
+            }
+
+            scrollToBottom() {
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message || !this.isConnected || this.isGenerating || !this.currentModel) return;
+
+                // Add user message to history and display
+                const userMessage = {
+                    role: 'user',
+                    content: message,
+                    timestamp: new Date().toISOString()
+                };
+                
+                this.conversationHistory.push(userMessage);
+                this.addMessage('user', message, false, new Date(userMessage.timestamp));
+                
+                this.messageInput.value = '';
+                this.adjustTextareaHeight();
+
+                this.isGenerating = true;
+                this.sendBtn.disabled = true;
+                this.stopChatBtn.disabled = false;
+
+                this.addLoadingMessage();
+
+                try {
+                    this.currentController = new AbortController();
+
+                    const response = await fetch(`${this.getServerUrl()}/v1/chat/completions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        signal: this.currentController.signal,
+                        body: JSON.stringify({
+                            model: this.currentModel,
+                            messages: this.conversationHistory.map(msg => ({
+                                role: msg.role,
+                                content: msg.content
+                            })),
+                            temperature: 0.7,
+                            max_tokens: -1,
+                            stream: true
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    this.removeLoadingMessage();
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let assistantMessage = '';
+                    let messageElement = null;
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = line.slice(6);
+                                if (data === '[DONE]') break;
+
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    const content = parsed.choices?.[0]?.delta?.content;
+
+                                    if (content) {
+                                        assistantMessage += content;
+
+                                        if (!messageElement) {
+                                            messageElement = this.createStreamingMessage();
+                                        }
+
+                                        this.updateStreamingMessage(messageElement, assistantMessage);
+                                    }
+                                } catch (e) {
+                                    // Ignore JSON parsing errors
+                                }
+                            }
+                        }
+                    }
+
+                    if (messageElement && assistantMessage) {
+                        this.finalizeStreamingMessage(messageElement);
+                        
+                        // Add assistant message to history
+                        const assistantMsg = {
+                            role: 'assistant',
+                            content: assistantMessage,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        this.conversationHistory.push(assistantMsg);
+                        this.saveCurrentConversation();
+                        this.updateConversationInfo();
+                    }
+
+                } catch (error) {
+                    this.removeLoadingMessage();
+                    if (error.name !== 'AbortError') {
+                        this.addMessage('system', `Błąd: ${error.message}`);
+                    } else {
+                        this.addMessage('system', 'Generowanie zostało przerwane.');
+                    }
+                } finally {
+                    this.isGenerating = false;
+                    this.updateSendButtonState();
+                    this.currentController = null;
+                }
+            }
+
+            saveCurrentConversation() {
+                if (this.currentConversationId === 'new') {
+                    // Create new conversation automatically without clearing display
+                    const timestamp = new Date().toISOString();
+                    const id = `conv_${Date.now()}`;
+                    
+                    this.conversations[id] = {
+                        id: id,
+                        title: `Konwersacja ${new Date().toLocaleString('pl-PL')}`,
+                        created: timestamp,
+                        model: this.currentModel,
+                        messages: [...this.conversationHistory]
+                    };
+                    
+                    this.currentConversationId = id;
+                    this.saveConversations();
+                    this.populateConversationSelect();
+                    this.conversationSelect.value = this.currentConversationId;
+                    this.deleteConversationBtn.disabled = false;
+                    this.updateConversationInfo();
+                    return;
+                }
+
+                const conversation = this.conversations[this.currentConversationId];
+                if (conversation) {
+                    conversation.messages = [...this.conversationHistory];
+                    conversation.lastModified = new Date().toISOString();
+                    this.saveConversations();
+                    this.populateConversationSelect();
+                    this.conversationSelect.value = this.currentConversationId;
+                }
+            }
+
+            createStreamingMessage() {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message assistant';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                messageDiv.appendChild(messageContent);
+                
+                const timestampDiv = document.createElement('div');
+                timestampDiv.className = 'message-timestamp';
+                timestampDiv.textContent = new Date().toLocaleString('pl-PL');
+                messageDiv.appendChild(timestampDiv);
+                
+                this.chatMessages.appendChild(messageDiv);
+                return messageDiv;
+            }
+
+            updateStreamingMessage(element, content) {
+                const contentDiv = element.querySelector('.message-content');
+                contentDiv.textContent = content;
+                this.scrollToBottom();
+            }
+
+            finalizeStreamingMessage(element) {
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'message-actions';
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'action-btn';
+                copyBtn.textContent = '📋';
+                copyBtn.title = 'Kopiuj';
+                copyBtn.addEventListener('click', () => {
+                    const content = element.querySelector('.message-content').textContent;
+                    navigator.clipboard.writeText(content);
+                    copyBtn.textContent = '✓';
+                    setTimeout(() => copyBtn.textContent = '📋', 1000);
+                });
+                
+                actionsDiv.appendChild(copyBtn);
+                element.appendChild(actionsDiv);
+            }
+
+            stopGeneration() {
+                if (this.currentController) {
+                    this.currentController.abort();
+                }
+            }
+        }
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', () => {
+            new LMStudioChatV2();
+        });
+    </script>
+</body>
+</html>
