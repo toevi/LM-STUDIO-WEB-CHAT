@@ -1,3 +1,3 @@
 # LM-STUDIO-WEB-CHAT
 LM STUDIO WEB CLIENT is a front-end application for LM Studio written in HTML. It runs on PC, Mac, and Android, preferably with Chrome. It's free, has editable IP, ports, and internal and external network connections. It can run on both LAN and WAN networks. The code is open source, allowing anyone to use and modify it.
-The site supports loading and unloading models, saving chats by date, deleting them, and loading them. Chat is fast and smooth, tested on Chrome and MS Edge. Server LM Studio I5 10400 F, 16 GB RAM, RTX 3060 Ti. 7/8B models, e.g. Llama 3, Llama 3 coder both instruct. DeepSeek, Open Chat, Mistral.
+The site supports loading and unloading models, saving chats by date, deleting them, and loading them. Chat is fast and smooth, tested on Chrome and MS Edge. Server LM Studio I5 10400 F, 16 GB RAM, RTX 3060 Ti. 7/8B models, e.g. Llama 3, Llama 3 coder both instruct. DeepSeek, Open Chat, Mistral, Bielik. 
